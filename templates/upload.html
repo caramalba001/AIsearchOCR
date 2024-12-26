@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OCR App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow-y: auto;
+        }
+        .container {
+            text-align: center;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            max-width: 800px;
+            width: 90%;
+            margin: 20px;
+        }
+        input[type="file"], select {
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .result {
+            margin-top: 20px;
+            text-align: left;
+        }
+        img {
+            max-width: 100%;
+            margin-top: 20px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            overflow-x: auto;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            text-align: left;
+            padding: 8px;
+            word-wrap: break-word;
+        }
+        th {
+            background-color: #f8f9fa;
+        }
+        .table-wrapper {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Image OCR App</h1>
+        <form id="ocr-form">
+            <select name="document_type" id="document_type" required aria-label="Select the type of document to analyze">
+                <option value="">Select Document Type</option>
+                <option value="driving-license">Driving License</option>
+                <option value="identification-card">Identification Card</option>
+                <option value="car-registration">Car Registration</option>
+            </select>
+            <input type="file" name="file" id="file" accept="image/*" required>
+            <button type="submit">Analyze Image</button>
+        </form>
+        <div class="result" id="result"></div>
+    </div>
+    <script>
+        const form = document.getElementById('ocr-form');
+        const resultDiv = document.getElementById('result');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const fileInput = document.getElementById('file');
+            const file = fileInput.files[0];
+            const documentType = document.getElementById('document_type').value;
+
+            if (!documentType) {
+                resultDiv.innerHTML = `<p style="color: red;">Please select a document type.</p>`;
+                return;
+            }
+
+            if (!file) {
+                resultDiv.innerHTML = `<p style="color: red;">Please upload an image.</p>`;
+                return;
+            }
+
+            const validImageTypes = ['image/jpeg', 'image/png', 'image/gif'];
+
+            if (!validImageTypes.includes(file.type)) {
+                resultDiv.innerHTML = `<p style="color: red;">Please upload a valid image file (JPEG, PNG, GIF).</p>`;
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('document_type', documentType);
+
+            resultDiv.innerHTML = `<p>Processing your image... Please wait.</p>`;
+
+            try {
+                const response = await fetch(`/`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                if (data.error) {
+                    resultDiv.innerHTML = `<p style="color: red;">${data.error}</p>`;
+                } else {
+                    let extractedTable;
+
+                    switch (documentType) {
+                        case 'driving-license':
+                            extractedTable = createOrderedTable(data.json_data, [
+                                'License_ID', 'ID_Card', 'Prefix', 'Name', 'Eng_Name', 'Dob'
+                            ]);
+                            break;
+                        case 'identification-card':
+                            extractedTable = createOrderedTable(data.json_data, [
+                                'ID_Card', 'Prefix', 'Name', 'Eng_Name', 'Dob', 'Address', 'Province', 'Religion'
+                            ]);
+                            break;
+                        case 'car-registration':
+                            extractedTable = createOrderedTable(data.json_data, [
+                                'Date_of_Registeration', 'Car_Plate_Number', 'Car_Province', 'Car_Type', 'Car_Brand',
+                                'Car_Model', 'Car_Year', 'Car_Color', 'Car_Chassis', 'Car_Engine_Number', 'Car_CC',
+                                'Car_HP', 'Car_Weight', 'Owner_Address', 'Owner_Province', 'Owner_Dob', 'Name', 'Owner_Prefix'
+                            ]);
+                            break;
+                        default:
+                            extractedTable = '<p>Invalid document type.</p>';
+                            break;
+                    }
+
+                    const additionalTable = data.other_info ? createTwoColumnTableWithLinks(data.other_info) : '<p>No additional information available.</p>';
+
+                    resultDiv.innerHTML = `
+                        <p><strong>Extracted JSON:</strong></p>
+                        <div class="table-wrapper">${extractedTable}</div>
+                        <p><strong>Additional Information (AI Search):</strong></p>
+                        <div class="table-wrapper">${additionalTable}</div>
+                        <p><strong>Uploaded Image:</strong></p>
+                        <img src="/uploads/${data.image_path}" alt="Uploaded Image">
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p style="color: red;">Error: Unable to process the image. Please try again.</p>`;
+                console.error("Error:", error);
+            }
+        });
+
+        function createOrderedTable(jsonData, order) {
+            let table = '<table><thead><tr>';
+            for (const key of order) {
+                table += `<th>${key}</th>`;
+            }
+            table += '</tr></thead><tbody><tr>';
+            for (const key of order) {
+                table += `<td>${jsonData[key] || ''}</td>`;
+            }
+            table += '</tr></tbody></table>';
+            return table;
+        }
+
+        function createTwoColumnTableWithLinks(jsonData) {
+            let table = '<table class="two-column-table"><thead><tr><th>Section</th><th>Detail</th></tr></thead><tbody>';
+            for (const [key, value] of Object.entries(jsonData)) {
+                let detail = '';
+
+                if (Array.isArray(value)) {
+                    // If the value is an array, join its elements with commas or format them as a list
+                    detail = value.map(item => {
+                        if (typeof item === 'object') {
+                            return JSON.stringify(item); // Convert object to JSON string
+                        }
+                        return item;
+                    }).join(', ');
+                } else if (typeof value === 'object' && value !== null) {
+                    // If the value is an object, stringify it
+                    detail = JSON.stringify(value);
+                } else if (['Facebook', 'Other_Social', 'Instagram', 'Linkedin'].includes(key) && value) {
+                    // Handle social media links
+                    detail = `<a href="${value}" target="_blank" rel="noopener noreferrer">${value}</a>`;
+                } else {
+                    // Handle other scalar values or empty values
+                    detail = value || 'N/A'; // Display 'N/A' for null or undefined values
+                }
+
+                table += `<tr><td>${key}</td><td>${detail}</td></tr>`;
+            }
+            table += '</tbody></table>';
+            return table;
+        }
+    </script>
+</body>
+</html>

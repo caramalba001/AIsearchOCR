@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OCR Results</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        section {
+            margin-bottom: 30px;
+        }
+        section h2 {
+            text-align: left;
+            font-size: 20px;
+            color: #333;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            text-align: left;
+            padding: 8px;
+        }
+        th {
+            background-color: #f8f9fa;
+        }
+        img {
+            max-width: 100%;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+        pre {
+            text-align: left;
+            background: #f8f9fa;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+        a {
+            display: block;
+            margin-top: 20px;
+            text-decoration: none;
+            color: #007bff;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>OCR Results</h1>
+        {% if error %}
+            <p class="error">{{ error }}</p>
+        {% else %}
+            <!-- Extracted JSON Section -->
+            <section>
+                <h2>Extracted JSON</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            {% for key in json_data.keys() %}
+                                <th>{{ key }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            {% for value in json_data.values() %}
+                                <td>{{ value }}</td>
+                            {% endfor %}
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- Additional Information Section -->
+            <section>
+                <h2>Additional Information (AI Search)</h2>
+                {% if other_info %}
+                    <table>
+                        <thead>
+                            <tr>
+                                {% for key in other_info.keys() %}
+                                    <th>{{ key }}</th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                {% for value in other_info.values() %}
+                                    <td>{{ value }}</td>
+                                {% endfor %}
+                            </tr>
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p>No additional information available.</p>
+                {% endif %}
+            </section>
+
+            <!-- Uploaded Image Section -->
+            <section>
+                <h2>Uploaded Image</h2>
+                <img src="/uploads/{{ image_path }}" alt="Uploaded Image">
+            </section>
+        {% endif %}
+        <a href="/">Upload Another Image</a>
+    </div>
+</body>
+</html>

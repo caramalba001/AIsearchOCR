@@ -1,0 +1,5 @@
+Project Overview
+This project automates the extraction and analysis of information from three document types: Driving Licenses, Identification Cards, and Car Registrations. By leveraging Azure's Optical Character Recognition (OCR) service, the system efficiently extracts textual data from uploaded images. Azure's AI services then process this text to identify and structure key fields such as names, dates of birth, and addresses. The extracted Thai and English names are utilized to perform Google searches, scraping relevant web data. Finally, another AI model consolidates the scraped information into structured JSON objects, generating actionable marketing insights. This seamless pipeline enhances efficiency, accuracy, and scalability in transforming raw documents into valuable marketing intelligence.
+
+Learn More
+For a detailed walkthrough of this project, including code snippets and implementation insights, visit https://medium.com/@kan.noppavit/using-azure-generative-ai-and-ocr-for-personalized-document-processing-and-marketing-insights-aac99fb32aa5
